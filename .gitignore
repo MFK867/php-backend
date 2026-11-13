@@ -1,0 +1,11 @@
+# Ignore SQLite database files if generated
+storage/*.sqlite
+storage/*.db
+
+# Keep uploaded files directory structure but don't commit uploaded student files
+storage/uploads/srs/*
+!storage/uploads/srs/.gitkeep
+storage/uploads/code/*
+!storage/uploads/code/.gitkeep
+storage/uploads/images/*
+!storage/uploads/images/.gitkeep

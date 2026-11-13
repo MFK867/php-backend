@@ -5,7 +5,35 @@
 // Clean slate: ZERO default projects and ZERO grades.
 // =======================================================
 
+function ensureSchema(PDO $pdo): void {
+    try {
+        $pdo->query("SELECT 1 FROM users LIMIT 1");
+        return; // Schema already exists
+    } catch (Exception $e) {
+        // Tables missing; execute schema.sql automatically
+    }
+
+    $schemaFile = __DIR__ . '/schema.sql';
+    if (!file_exists($schemaFile)) {
+        return;
+    }
+
+    $sql = file_get_contents($schemaFile);
+    // Strip SQL comments
+    $cleanSql = preg_replace('/--.*$/m', '', $sql);
+    $statements = array_filter(array_map('trim', explode(';', $cleanSql)));
+
+    foreach ($statements as $stmt) {
+        if (!empty($stmt)) {
+            $pdo->exec($stmt);
+        }
+    }
+}
+
 function seedDatabase(PDO $pdo): void {
+    // 0. Ensure all tables exist
+    ensureSchema($pdo);
+
     // 1. Academic Departments
     $departments = [
         ['name' => 'Department of Computer Science', 'code' => 'DCS'],

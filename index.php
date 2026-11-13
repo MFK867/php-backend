@@ -2,14 +2,17 @@
 // =======================================================
 // Front Controller & REST API Router
 // =======================================================
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 
+require_once __DIR__ . '/src/Response.php';
+
+// Handle CORS globally before any route processing or DB connection
+Response::handleCors();
+
 require_once __DIR__ . '/config/config.php';
 require_once __DIR__ . '/config/database.php';
-require_once __DIR__ . '/src/Response.php';
 require_once __DIR__ . '/src/Auth.php';
 require_once __DIR__ . '/src/Controllers/AuthController.php';
 require_once __DIR__ . '/src/Controllers/StudentController.php';
@@ -18,9 +21,6 @@ require_once __DIR__ . '/src/Controllers/ShowcaseController.php';
 require_once __DIR__ . '/src/Controllers/FileController.php';
 require_once __DIR__ . '/src/Controllers/MetadataController.php';
 require_once __DIR__ . '/src/Controllers/NotificationController.php';
-
-// Handle CORS globally before any route processing
-Response::handleCors();
 
 try {
     $pdo = Database::getConnection();

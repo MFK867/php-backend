@@ -1,0 +1,18 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Ensure Authorization Bearer headers reach PHP in FastCGI / LiteSpeed / Apache
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Send all requests through index.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Prevent viewing of sensitive files (.env, .sql, etc.)
+<FilesMatch "(\.env|\.sql|\.sqlite|\.git)">
+    Order allow,deny
+    Deny from all
+</FilesMatch>

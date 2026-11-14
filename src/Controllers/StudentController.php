@@ -430,12 +430,12 @@ class StudentController {
 
     public static function uploadSrs(PDO $pdo, int $id): void {
         $user = Auth::requireAuth($pdo, ['student']);
-        self::handleFileUpload($pdo, $id, (int)$user['id'], 'srs', ['pdf', 'docx']);
+        self::handleFileUpload($pdo, $id, (int)$user['id'], 'srs', ['pdf', 'docx', 'doc']);
     }
 
     public static function uploadCode(PDO $pdo, int $id): void {
         $user = Auth::requireAuth($pdo, ['student']);
-        self::handleFileUpload($pdo, $id, (int)$user['id'], 'source_code', ['zip']);
+        self::handleFileUpload($pdo, $id, (int)$user['id'], 'source_code', ['zip', 'rar', '7z', 'tar', 'gz']);
     }
 
     private static function handleFileUpload(PDO $pdo, int $projectId, int $userId, string $fileType, array $allowedExts): void {
@@ -451,8 +451,23 @@ class StudentController {
             Response::error("Cannot upload files to a locked project.", 400);
         }
 
-        if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
-            Response::error("File upload failed or no file provided.", 400);
+        if (empty($_FILES['file'])) {
+            Response::error("No file was received in request payload.", 400);
+        }
+
+        $uploadErr = $_FILES['file']['error'];
+        if ($uploadErr !== UPLOAD_ERR_OK) {
+            $errMap = [
+                UPLOAD_ERR_INI_SIZE   => "The uploaded file exceeds the server maximum upload limit (upload_max_filesize).",
+                UPLOAD_ERR_FORM_SIZE  => "The uploaded file exceeds the MAX_FILE_SIZE directive.",
+                UPLOAD_ERR_PARTIAL    => "The file was only partially uploaded.",
+                UPLOAD_ERR_NO_FILE    => "No file was uploaded.",
+                UPLOAD_ERR_NO_TMP_DIR => "Server is missing temporary upload directory.",
+                UPLOAD_ERR_CANT_WRITE => "Failed to write file to disk on server.",
+                UPLOAD_ERR_EXTENSION  => "A PHP extension stopped the file upload.",
+            ];
+            $msg = $errMap[$uploadErr] ?? "Upload error code: $uploadErr";
+            Response::error("File upload failed: $msg", 400);
         }
 
         $file = $_FILES['file'];
@@ -462,12 +477,13 @@ class StudentController {
             Response::error("Invalid file format. Allowed extensions: " . implode(', ', $allowedExts), 422);
         }
 
-        $config = require dirname(__DIR__) . '/config/config.php';
+        $config = require dirname(__DIR__, 2) . '/config/config.php';
         $targetDir = $fileType === 'srs' ? $config['storage']['srs'] : $config['storage']['code'];
 
         if (!is_dir($targetDir)) {
             @mkdir($targetDir, 0777, true);
         }
+        @chmod($targetDir, 0777);
 
         $storedName = sprintf("%s_%s_%s.%s", $project['submission_code'], $fileType, time(), $ext);
         $targetPath = $targetDir . '/' . $storedName;

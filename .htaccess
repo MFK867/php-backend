@@ -11,8 +11,25 @@
     RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
+# Increase upload and execution limits for files/ZIPs
+<IfModule mod_php.c>
+    php_value upload_max_filesize 256M
+    php_value post_max_size 256M
+    php_value memory_limit 512M
+</IfModule>
+<IfModule mod_php7.c>
+    php_value upload_max_filesize 256M
+    php_value post_max_size 256M
+    php_value memory_limit 512M
+</IfModule>
+<IfModule mod_php8.c>
+    php_value upload_max_filesize 256M
+    php_value post_max_size 256M
+    php_value memory_limit 512M
+</IfModule>
+
 # Prevent viewing of sensitive files (.env, .sql, etc.)
-<FilesMatch "(\.env|\.sql|\.sqlite|\.git)">
+<FilesMatch "(\.env|\.sql|\.sqlite|\.git|\.user\.ini)">
     Order allow,deny
     Deny from all
 </FilesMatch>

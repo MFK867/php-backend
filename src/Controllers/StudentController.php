@@ -127,6 +127,8 @@ class StudentController {
             'files'                => $files,
             'srs_document_file'    => $srsFile,
             'code_archive_file'    => $codeFile,
+            'srs_file'             => $srsFile,
+            'code_file'            => $codeFile,
             'review'               => $review,
             'evaluation'           => $evaluation,
         ];

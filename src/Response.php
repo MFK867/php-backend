@@ -10,6 +10,7 @@ class Response {
         header("Access-Control-Allow-Origin: $origin");
         header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS");
         header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept");
+        header("Access-Control-Expose-Headers: Content-Disposition, Content-Length, Content-Type");
         header("Access-Control-Allow-Credentials: true");
         header("Access-Control-Max-Age: 86400");
 

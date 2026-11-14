@@ -83,14 +83,18 @@ class FileController {
         }
 
         Response::handleCors();
+        $filename = basename($file['original_filename']);
         header('Content-Description: File Transfer');
         header('Content-Type: ' . ($file['mime_type'] ?: 'application/octet-stream'));
-        header('Content-Disposition: attachment; filename="' . basename($file['original_filename']) . '"');
+        header('Content-Disposition: attachment; filename="' . addslashes($filename) . '"; filename*=UTF-8\'\'' . rawurlencode($filename));
         header('Expires: 0');
-        header('Cache-Control: must-revalidate');
+        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
         header('Pragma: public');
         header('Content-Length: ' . filesize($filePath));
 
+        if (ob_get_level()) {
+            @ob_end_clean();
+        }
         readfile($filePath);
         exit();
     }

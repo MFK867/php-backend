@@ -143,7 +143,7 @@ if ($method === 'GET' && preg_match('#^/student/projects/(\d+)/grade$#', $path, 
 if ($method === 'POST' && $path === '/files/upload-title-image') {
     FileController::uploadTitleImage($pdo);
 }
-if ($method === 'GET' && preg_match('#^/files/download/(\d+)$#', $path, $m)) {
+if ($method === 'GET' && (preg_match('#^/files/(\d+)/download$#', $path, $m) || preg_match('#^/files/download/(\d+)$#', $path, $m))) {
     FileController::downloadFile($pdo, (int)$m[1]);
 }
 if ($method === 'GET' && preg_match('#^/files/view-image/([^/]+)$#', $path, $m)) {

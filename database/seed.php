@@ -156,7 +156,7 @@ function seedDatabase(PDO $pdo): void {
         ],
         [
             'name'  => 'H. R. Abbas',
-            'email' => 'hrabbas7744@gmail.com',
+            'email' => 'hrabbas7777@gmail.com',
             'pass'  => 'HrAdmin@892#zQ!',
         ],
     ];
@@ -183,8 +183,8 @@ function seedDatabase(PDO $pdo): void {
         }
     }
 
-    // 6. Remove any previous demo accounts
-    $delDemo = $pdo->prepare("DELETE FROM users WHERE email IN ('dr.farhan@tuf.edu.pk', 'ali.ahmad@tuf.edu.pk')");
+    // 6. Remove any previous demo accounts or obsolete test emails
+    $delDemo = $pdo->prepare("DELETE FROM users WHERE email IN ('dr.farhan@tuf.edu.pk', 'ali.ahmad@tuf.edu.pk', 'hrabbas7744@gmail.com')");
     $delDemo->execute();
 
     // 7. Ensure physical upload directories exist
@@ -213,7 +213,7 @@ Password: FkAdmin@892#zQ!
 Role:     admin
 
 Admin 2:
-Email:    hrabbas7744@gmail.com
+Email:    hrabbas7777@gmail.com
 Password: HrAdmin@892#zQ!
 Role:     admin
 

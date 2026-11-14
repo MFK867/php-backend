@@ -73,6 +73,16 @@ if ($path === '/' || $path === '/health') {
 }
 
 // 1. Authentication Routes
+if ($method === 'GET' && ($path === '/login' || $path === '/login/student' || $path === '/login/teacher')) {
+    Response::json([
+        'status'          => 'online',
+        'endpoint'        => '/login',
+        'accepted_method' => 'POST',
+        'content_type'    => 'application/json',
+        'payload_format'  => ['email' => 'user@tuf.edu.pk', 'password' => 'YourPassword'],
+        'message'         => 'Authentication endpoint is online. Submit credentials via HTTP POST.'
+    ]);
+}
 if ($method === 'POST' && ($path === '/login' || $path === '/login/student' || $path === '/login/teacher')) {
     AuthController::login($pdo);
 }

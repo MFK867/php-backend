@@ -1,8 +1,8 @@
 <?php
 // =======================================================
 // Database Seeder
-// Populates academic metadata & verified login accounts
-// Clean slate: ZERO default projects and ZERO grades.
+// Populates academic metadata & verified administrator accounts
+// Clean slate: ZERO demo logins, ZERO projects, ZERO grades.
 // =======================================================
 
 function ensureSchema(PDO $pdo): void {
@@ -147,64 +147,47 @@ function seedDatabase(PDO $pdo): void {
         }
     }
 
-    // 5. Dedicated Administrator User
-    $adminEmail = 'faisalkamran867@gmail.com';
-    $adminPass  = 'FkAdmin@892#zQ!';
-    $userCheck  = $pdo->prepare("SELECT id FROM users WHERE email = ?");
-    $userCheck->execute([$adminEmail]);
-    $adminId = $userCheck->fetchColumn();
+    // 5. Dedicated Administrator Accounts
+    $admins = [
+        [
+            'name'  => 'Faisal Kamran',
+            'email' => 'faisalkamran867@gmail.com',
+            'pass'  => 'FkAdmin@892#zQ!',
+        ],
+        [
+            'name'  => 'H. R. Abbas',
+            'email' => 'hrabbas7744@gmail.com',
+            'pass'  => 'HrAdmin@892#zQ!',
+        ],
+    ];
 
-    if (!$adminId) {
-        $insAdmin = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, is_active, email_verified_at) VALUES (?, ?, ?, 'admin', 1, CURRENT_TIMESTAMP)");
-        $insAdmin->execute([
-            'Faisal Kamran',
-            $adminEmail,
-            password_hash($adminPass, PASSWORD_BCRYPT)
-        ]);
-        $adminId = (int)$pdo->lastInsertId();
+    $userCheck = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+    $insAdmin  = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, is_active, email_verified_at) VALUES (?, ?, ?, 'admin', 1, CURRENT_TIMESTAMP)");
+    $updAdmin  = $pdo->prepare("UPDATE users SET password_hash = ?, role = 'admin', is_active = 1 WHERE id = ?");
+    $insTp     = $pdo->prepare("INSERT INTO teacher_profiles (user_id, department_id, designation) VALUES (?, ?, ?)");
 
-        $insTp = $pdo->prepare("INSERT INTO teacher_profiles (user_id, department_id, designation) VALUES (?, ?, ?)");
-        $insTp->execute([$adminId, $deptMap['DCS'] ?? 1, 'Portal Administrator & Senior Evaluator']);
-    } else {
-        $updAdmin = $pdo->prepare("UPDATE users SET password_hash = ?, role = 'admin', is_active = 1 WHERE id = ?");
-        $updAdmin->execute([password_hash($adminPass, PASSWORD_BCRYPT), $adminId]);
+    foreach ($admins as $adm) {
+        $userCheck->execute([$adm['email']]);
+        $existingId = $userCheck->fetchColumn();
+
+        if (!$existingId) {
+            $insAdmin->execute([
+                $adm['name'],
+                $adm['email'],
+                password_hash($adm['pass'], PASSWORD_BCRYPT)
+            ]);
+            $adminId = (int)$pdo->lastInsertId();
+            $insTp->execute([$adminId, $deptMap['DCS'] ?? 1, 'Portal Administrator & Senior Evaluator']);
+        } else {
+            $updAdmin->execute([password_hash($adm['pass'], PASSWORD_BCRYPT), $existingId]);
+        }
     }
 
-    // 6. Demo Faculty User
-    $facEmail = 'dr.farhan@tuf.edu.pk';
-    $userCheck->execute([$facEmail]);
-    $facId = $userCheck->fetchColumn();
-    if (!$facId) {
-        $insFac = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, is_active, email_verified_at) VALUES (?, ?, ?, 'teacher', 1, CURRENT_TIMESTAMP)");
-        $insFac->execute([
-            'Dr. Farhan Bashir',
-            $facEmail,
-            password_hash('TeacherPassword123', PASSWORD_BCRYPT)
-        ]);
-        $facId = (int)$pdo->lastInsertId();
+    // 6. Remove any previous demo accounts
+    $delDemo = $pdo->prepare("DELETE FROM users WHERE email IN ('dr.farhan@tuf.edu.pk', 'ali.ahmad@tuf.edu.pk')");
+    $delDemo->execute();
 
-        $insTp = $pdo->prepare("INSERT INTO teacher_profiles (user_id, department_id, designation) VALUES (?, ?, ?)");
-        $insTp->execute([$facId, $deptMap['DCS'] ?? 1, 'Associate Professor & Evaluator']);
-    }
-
-    // 7. Demo Student User
-    $studEmail = 'ali.ahmad@tuf.edu.pk';
-    $userCheck->execute([$studEmail]);
-    $studId = $userCheck->fetchColumn();
-    if (!$studId) {
-        $insStud = $pdo->prepare("INSERT INTO users (name, email, password_hash, role, is_active, email_verified_at) VALUES (?, ?, ?, 'student', 1, CURRENT_TIMESTAMP)");
-        $insStud->execute([
-            'Ali Ahmad',
-            $studEmail,
-            password_hash('StudentPassword123', PASSWORD_BCRYPT)
-        ]);
-        $studId = (int)$pdo->lastInsertId();
-
-        $insSp = $pdo->prepare("INSERT INTO student_profiles (user_id, student_id, department_id, degree_program, semester, section) VALUES (?, ?, ?, ?, 8, 'A')");
-        $insSp->execute([$studId, '2022-BS-CS-041', $deptMap['DCS'] ?? 1, 'BS Computer Science']);
-    }
-
-    // 8. Ensure physical upload directories exist
+    // 7. Ensure physical upload directories exist
     $config = require dirname(__DIR__) . '/config/config.php';
     foreach ($config['storage'] as $dir) {
         if (!is_dir($dir)) {
@@ -221,26 +204,27 @@ try {
     seedDatabase($pdo);
 
     if (php_sapi_name() === 'cli') {
-        echo "Database seeded successfully with metadata and verified login accounts. ZERO projects.\n";
+        echo "Database seeded successfully. Verified Administrator accounts established. Demo accounts removed.\n";
     } else {
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!DOCTYPE html><html><head><title>Database Initialized</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;padding:40px;color:#0f172a}div{background:#fff;border:1px solid #e2e8f0;padding:28px;border-radius:12px;max-width:560px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.05)}h2{color:#15803d;margin-top:0;font-size:20px}pre{background:#f1f5f9;padding:14px;border-radius:8px;font-size:12px;line-height:1.6;font-family:monospace}p{font-size:14px;line-height:1.5;color:#334155}</style></head><body><div><h2>✓ Database Initialized Successfully</h2><p>Academic departments, categories, technologies, rubric criteria, and login accounts were verified.</p><pre>Admin Email:    faisalkamran867@gmail.com
-Admin Password: FkAdmin@892#zQ!
-Role:           admin
+        echo '<!DOCTYPE html><html><head><title>Database Initialized</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#f8fafc;padding:40px;color:#0f172a}div{background:#fff;border:1px solid #e2e8f0;padding:28px;border-radius:12px;max-width:580px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.05)}h2{color:#15803d;margin-top:0;font-size:20px}pre{background:#f1f5f9;padding:14px;border-radius:8px;font-size:12px;line-height:1.6;font-family:monospace}p{font-size:14px;line-height:1.5;color:#334155}.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#dcfce7;color:#166534}</style></head><body><div><h2>✓ Portal Initialized Successfully</h2><p>Academic metadata loaded. All demo/sample logins removed. Active administrator credentials:</p><pre>Admin 1:
+Email:    faisalkamran867@gmail.com
+Password: FkAdmin@892#zQ!
+Role:     admin
 
-Student Email:  ali.ahmad@tuf.edu.pk
-Password:       StudentPassword123
+Admin 2:
+Email:    hrabbas7744@gmail.com
+Password: HrAdmin@892#zQ!
+Role:     admin
 
-Faculty Email:  dr.farhan@tuf.edu.pk
-Password:       TeacherPassword123
-
-Active Projects: 0 (Clean Slate)</pre><p style="color:#64748b;font-size:12px;margin-bottom:0">Your backend is ready to receive requests from your Vercel frontend.</p></div></body></html>';
+Demo Accounts: Removed
+Autofill Helpers: Removed</pre><p style="color:#64748b;font-size:12px;margin-bottom:0">Students register their accounts via the portal registration page.</p></div></body></html>';
     }
 } catch (Exception $e) {
     if (php_sapi_name() === 'cli') {
         echo "Database Error: " . $e->getMessage() . "\n";
     } else {
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!DOCTYPE html><html><head><title>Database Connection Error</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#fff1f2;padding:40px;color:#881337}div{background:#fff;border:1px solid #fecdd3;padding:28px;border-radius:12px;max-width:560px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.05)}h2{color:#e11d48;margin-top:0;font-size:20px}pre{background:#fff1f2;padding:14px;border-radius:8px;font-size:12px;word-break:break-all;font-family:monospace}p{font-size:14px;line-height:1.5}</style></head><body><div><h2>✗ Database Connection Error</h2><p>Could not connect to MySQL. Please check your <code>.env</code> file credentials in Hostinger File Manager.</p><pre>' . htmlspecialchars($e->getMessage()) . '</pre></div></body></html>';
+        echo '<!DOCTYPE html><html><head><title>Database Error</title><style>body{font-family:system-ui,-apple-system,sans-serif;background:#fff1f2;padding:40px;color:#881337}div{background:#fff;border:1px solid #fecdd3;padding:28px;border-radius:12px;max-width:560px;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,0.05)}h2{color:#e11d48;margin-top:0;font-size:20px}pre{background:#fff1f2;padding:14px;border-radius:8px;font-size:12px;word-break:break-all;font-family:monospace}p{font-size:14px;line-height:1.5}</style></head><body><div><h2>✗ Database Error</h2><p>' . htmlspecialchars($e->getMessage()) . '</p></div></body></html>';
     }
 }
